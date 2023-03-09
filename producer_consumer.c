@@ -79,10 +79,78 @@ static int kthread_producer(void *arg) {
     }
 }
 
+
+/*
+    function _G.Text.formatTime(lap)
+
+	    local min = math.floor(lap/60)
+	    local sec = math.floor(lap)-60*min
+	    local milisec = math.floor((lap-sec-min*60)*1000+0.5)
+
+	    if min < 1 then
+		    min = "00:"
+	    elseif min > 0 and min < 10 then
+		    min = "0"..min..":"
+	    else
+		    min = min..":"
+	    end
+	    if sec < 10 then
+		    sec = "0"..sec
+	    end
+	    if milisec < 100 and milisec >= 10 then
+		    milisec = "0"..milisec
+	    elseif milisec < 10 then
+		    milisec = "00"..milisec
+	    end
+
+	    local output = min..sec.."."..milisec
+
+	    return output
+
+    end
+*/
+
+// Generic time formatting function I ripped from my game and made into C lol
+char* format_time(unsigned long lap) {
+    unsigned long min = lap / 60; // decimals don't matter because it will be truncated
+    unsigned long sec = lap - 60 * min;
+    unsigned long milisec = (lap - sec - min * 60) * 1000;
+
+    char* output = kmalloc(sizeof(char) * 9, GFP_KERNEL); // kmalloc is a contiguous memory allocation for small - medium size kernel level memory allocation & does not fragment kernel memory pool
+
+    if (min < 1) {
+        sprintf(output, "00:%02lu.%03lu", sec, milisec);
+    }
+    else if (min > 0 && min < 10) {
+        sprintf(output, "0%lu:%02lu.%03lu", min, sec, milisec);
+    }
+    else {
+        sprintf(output, "%lu:%02lu.%03lu", min, sec, milisec);
+    }
+
+    return output;
+}
+
+int consumer_thread_number = 1; // 1 base cuz humans start at 1
 static int kthread_consumer(void *arg) {
+    int consumer_id = consumer_thread_number;
+    consumer_thread_number += 1;
     while(!kthread_should_stop()) {
-        //calculating elapsed time should go here 
-        printk("[Consumer-i] Consumed...");
+        //calculating elapsed time should go here
+        for (int i=0; i<buffSize; i++) {
+            task_struct *task = buffer + (i*buffSize); // get the particular task, stored in the buffer
+            int currentTime = ktime_get_ns();
+            int startTime = task->start_time; // dereference and access start_time
+            int telapsed = currentTime - startTime;
+            printk("[Consumer-%d] Consumed Item#-%d on buffer index:%d PID:%d Elapsed Time - %s",
+                consumer_id,
+                0,
+                i,
+                123456,
+                format_time(telapsed);
+            );
+        }
+
     }
 }
 
