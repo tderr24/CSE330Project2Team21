@@ -6,7 +6,7 @@
 #include <linux/vmalloc.h>
 
 #define AUTHOR "CSE330 Group 21"
-MODULE_AUTHOR(AUTHOR)
+MODULE_AUTHOR(AUTHOR);
 
 static int buffSize;
 static int prod;
@@ -21,9 +21,9 @@ module_param(uuid, int, 0644);
 
 //initialize threads here
 struct task_struct *producer_thread;
-struct tast_struct *buffer;
+struct task_struct *buffer;
 struct task_struct *consumer_thread;
-struct tast_struct *p;
+struct task_struct *p;
 
 static int processes = 0;
 static int producerIndex = 0;
@@ -37,7 +37,7 @@ static int init_producer_consumer(void) {
     //this is the function that will run threads
     if(prod == 1) {
         //creates buffer after defining bufferSize and confirming there is a producer
-        buffer = vmalloc(buffSize*sizeof(struct tastk_struct));
+        buffer = vmalloc(buffSize*sizeof(struct task_struct));
         //initialize semaphores
         sema_init(&empty, buffSize);
         sema_init(&mutex, 0);
@@ -65,7 +65,7 @@ static int kthread_producer(void *arg) {
                 break;
             }
             //idk what should go here
-            if(down_interruptible(??)) {
+            if(down_interruptible(??)) { // has to be a semaphore that's all I know
                 break;
             }
             buffer[producerIndex] = *p;
@@ -138,7 +138,7 @@ static int kthread_consumer(void *arg) {
     while(!kthread_should_stop()) {
         //calculating elapsed time should go here
         for (int i=0; i<buffSize; i++) {
-            task_struct *task = buffer + (i*buffSize); // get the particular task, stored in the buffer
+            task_struct *task = buffer + (i*sizeof(struct task_struct)); // get the particular task, stored in the buffer
             int currentTime = ktime_get_ns();
             int startTime = task->start_time; // dereference and access start_time
             int telapsed = currentTime - startTime;
@@ -147,7 +147,8 @@ static int kthread_consumer(void *arg) {
                 0,
                 i,
                 123456,
-                format_time(telapsed);
+                format_time(telapsed),
+                0 // i dont know why but it made me add another argument to fix the error. Not sure why it's expecting 6 arguments in stead of just 5... maybe I'm being stupid.
             );
         }
 
