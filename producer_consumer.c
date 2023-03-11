@@ -65,15 +65,19 @@ static int kthread_producer(void *arg) {
                 break;
             }
             //idk what should go here
-            if(down_interruptible(mutex)) { // has to be a semaphore that's all I know
+            if(down_interruptible(&mutex)) { // has to be a semaphore that's all I know
                 break;
             }
+	    if(down_interruptible(&empty) {
+            	break;
+	    }
             buffer[producerIndex] = *p;
             processes++;
             //allows producer to continue iterating through the buffer without exceeding the max size
             producerIndex = (producerIndex+1) % buffSize;
             printk("[producer] Produced Item#-%d at buffer index:%d for PID:%d\n", processes, producerIndex, buffer[producerIndex].pid);
             up(&mutex);
+	    up(&full);
         }
         
     }
@@ -136,9 +140,13 @@ static int kthread_consumer(void *arg) {
     int consumer_id = consumer_thread_number;
     consumer_thread_number += 1;
     while(!kthread_should_stop()) {
-	 if(down_interruptible(mutex)) { // has to be a semaphore that's all I know
+	 if(down_interruptible(&mutex)) { // has to be a semaphore that's all I know
                 break;
-            }
+	 }
+
+	if(down_interruptible(&empty) {
+		break;
+	}
         //calculating elapsed time should go here
         for (int i=0; i<buffSize; i++) {
             task_struct *task = buffer + (i*sizeof(struct task_struct)); // get the particular task, stored in the buffer
@@ -155,6 +163,7 @@ static int kthread_consumer(void *arg) {
             );
         }
 	up(&mutex);
+	up(&empty);
     }
 }
 
