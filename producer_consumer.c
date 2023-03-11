@@ -45,13 +45,8 @@ static int init_producer_consumer(void) {
         sema_init(&full, 1);
         producer_thread = kthread_run(kthread_producer, NULL, "producer");
         //if there is a producer, must check if there is at least one consumer
-        //char *consName;
-        char consName[MAX];
-        if(cons > 0) {
-            for(int i = 1; i < cons; i++) {
-                strcat(strcpy(consName, "Consumer- "), i);
-                consumer_thread = kthread_run(kthread_consumer, NULL, consName);
-            }
+        if(cons == 1) {
+            consumer_thread = kthread_run(kthread_consumer, NULL, "consumer");
         }
     }
     //returns 0 if there isnt any producers
