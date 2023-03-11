@@ -68,7 +68,7 @@ static int kthread_producer(void *arg) {
             if(down_interruptible(&mutex)) { // has to be a semaphore that's all I know
                 break;
             }
-	    if(down_interruptible(&empty) {
+	    if(down_interruptible(&empty)) {
             	break;
 	    }
             buffer[producerIndex] = *p;
