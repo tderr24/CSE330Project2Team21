@@ -207,8 +207,8 @@ static void exit_producer_consumer(void)
         printk("Consumer Thread stopped.");
     }
 
-    printk("Total number of items produced: " + processes);
-    printk("Total number of items consumed: " + cprocesses);
+    printk("Total number of items produced: %d",processes);
+    printk("Total number of items consumed: %d",cprocesses);
 
     printk("The total elapsed time of all processes for UID %d is %s", uuid, format_time(totelapsedc)); // replaced
 
