@@ -5,6 +5,7 @@
 #include <linux/kthread.h>
 #include <linux/vmalloc.h>
 #include <linux/sched/signal.h>
+#include <linux/moduleparam.h>
 
 #define AUTHOR "CSE330 Group 21"
 // Group 21 Submission
