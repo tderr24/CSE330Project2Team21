@@ -27,7 +27,11 @@ struct task_struct *consumer_thread;
 struct task_struct *p;
 
 static int processes = 0;
+static int cprocesses = 0;
 static int producerIndex = 0;
+int totelapsedp=0;
+int totelapsedc=0;
+
 
 //initialize semaphores
 struct semaphore empty;
@@ -64,16 +68,16 @@ static int kthread_producer(void *arg) {
             if(down_interruptible(&mutex)) { // has to be a semaphore that's all I know
                 break;
             }
-	    if(down_interruptible(&empty)) {
-            	break;
-	    }
+            if(down_interruptible(&empty)) {
+                break;
+            }
             buffer[producerIndex] = *p;
             processes++;
             //allows producer to continue iterating through the buffer without exceeding the max size
             producerIndex = (producerIndex+1) % buffSize;
             printk("[producer] Produced Item#-%d at buffer index:%d for PID:%d\n", processes, producerIndex, buffer[producerIndex].pid);
             up(&mutex);
-	    up(&full);
+	        up(&full);
         }
         
     }
@@ -136,19 +140,20 @@ static int kthread_consumer(void *arg) {
     int consumer_id = consumer_thread_number;
     consumer_thread_number += 1;
     while(!kthread_should_stop()) {
-	 if(down_interruptible(&mutex)) { // has to be a semaphore that's all I know
-                break;
-	 }
-
-	if(down_interruptible(&empty) {
-		break;
-	}
+        if(down_interruptible(&mutex)) { // has to be a semaphore that's all I know
+            break;
+        }
+        if(down_interruptible(&empty)) {
+            break;
+        }
         //calculating elapsed time should go here
         for (int i=0; i<buffSize; i++) {
             task_struct *task = buffer + (i*sizeof(struct task_struct)); // get the particular task, stored in the buffer
             int currentTime = ktime_get_ns();
             int startTime = task->start_time; // dereference and access start_time
             int telapsed = currentTime - startTime;
+            totelapsedc+=telapsed;
+            cprocesses++;
             printk("[Consumer-%d] Consumed Item#-%d on buffer index:%d PID:%d Elapsed Time - %s",
                 consumer_id,
                 0,
@@ -158,12 +163,34 @@ static int kthread_consumer(void *arg) {
                 0 // i dont know why but it made me add another argument to fix the error. Not sure why it's expecting 6 arguments in stead of just 5... maybe I'm being stupid.
             );
         }
-	up(&mutex);
-	up(&empty);
+        up(&mutex);
+        up(&empty);
     }
 }
 
 static void exit_producer_consumer(void) {
-    //exit the module
-    printk("The total elapsed time of all processes for...")
+    if(prod==1) {
+        kthread_stop(producer_thread);
+        printk("Producer Thread stopped.");
+    }
+    if(cons == 1) {
+        kthread_stop(consumer_thread);
+        printk("Consumer Thread stopped.");
+    }
+
+    printk("Total number of items produced: "+processes);
+    printk("Total number of items consumed: "+cprocesses);
+    
+    printk("The total elapsed time of all processes for UID "+uuid+" is ");
+    printk(format_time(totelapsedc));
+
+    // Not sure how to actually do this here
+    printk("CSE330 Project 2 Kernel Module Removed");
+
+    printk(uuid+" Total Elapsed Time from PS Command ");
+    // Not correct yet, don't know how to calculate
+    printk(format_time(totelapsedp));
+
+    printk("Terminated");
+    exit(1);
 }
