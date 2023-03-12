@@ -4,6 +4,7 @@
 #include <linux/semaphore.h>
 #include <linux/kthread.h>
 #include <linux/vmalloc.h>
+#include <linux/sched/signal.h>
 
 #define AUTHOR "CSE330 Group 21"
 // Group 21 Submission
@@ -38,27 +39,6 @@ struct semaphore empty;
 struct semaphore mutex;
 struct semaphore full;
 
-static int init_producer_consumer(void)
-{
-    // this is the function that will run threads
-    if (prod == 1)
-    {
-        // creates buffer after defining bufferSize and confirming there is a producer
-        buffer = vmalloc(buffSize * sizeof(struct task_struct));
-        // initialize semaphores
-        sema_init(&empty, buffSize);
-        sema_init(&mutex, 0);
-        sema_init(&full, 1);
-        producer_thread = kthread_run(kthread_producer, NULL, "producer");
-        // if there is a producer, must check if there is at least one consumer
-        if (cons == 1)
-        {
-            consumer_thread = kthread_run(kthread_consumer, NULL, "consumer");
-        }
-    }
-    // returns 0 if there isnt any producers
-    return 0;
-}
 
 static int kthread_producer(void *arg)
 {
@@ -89,15 +69,14 @@ static int kthread_producer(void *arg)
             up(&full);
         }
     }
+    return 0;
 }
 
 /*
     function _G.Text.formatTime(lap)
-
         local min = math.floor(lap/60)
         local sec = math.floor(lap)-60*min
         local milisec = math.floor((lap-sec-min*60)*1000+0.5)
-
         if min < 1 then
             min = "00:"
         elseif min > 0 and min < 10 then
@@ -113,11 +92,8 @@ static int kthread_producer(void *arg)
         elseif milisec < 10 then
             milisec = "00"..milisec
         end
-
         local output = min..sec.."."..milisec
-
         return output
-
     end
 */
 
@@ -155,6 +131,7 @@ int consumer_thread_number = 1; // 1 base cuz humans start at 1
 static int kthread_consumer(void *arg)
 {
     int consumer_id = consumer_thread_number;
+    int i;
     consumer_thread_number += 1;
     while (!kthread_should_stop())
     {
@@ -167,9 +144,10 @@ static int kthread_consumer(void *arg)
             break;
         }
         // calculating elapsed time should go here
-        for (int i = 0; i < buffSize; i++)
+        
+        for (i = 0; i < buffSize; i++)
         {
-            task_struct *task = buffer + (i * sizeof(struct task_struct)); // get the particular task, stored in the buffer
+            struct task_struct *task = buffer + (i * sizeof(struct task_struct)); // get the particular task, stored in the buffer
             int currentTime = ktime_get_ns();
             int startTime = task->start_time; // dereference and access start_time
             int telapsed = currentTime - startTime;
@@ -180,13 +158,35 @@ static int kthread_consumer(void *arg)
                    0,
                    i,
                    123456,
-                   format_time(telapsed),
-                   0 // i dont know why but it made me add another argument to fix the error. Not sure why it's expecting 6 arguments in stead of just 5... maybe I'm being stupid.
+                   format_time(telapsed)// i dont know why but it made me add another argument to fix the error. Not sure why it's expecting 6 arguments in stead of just 5... maybe I'm being stupid.
             );
         }
         up(&mutex);
         up(&empty);
     }
+    return 0;
+}
+
+static int init_producer_consumer(void)
+{
+    // this is the function that will run threads
+    if (prod == 1)
+    {
+        // creates buffer after defining bufferSize and confirming there is a producer
+        buffer = vmalloc(buffSize * sizeof(struct task_struct));
+        // initialize semaphores
+        sema_init(&empty, buffSize);
+        sema_init(&mutex, 0);
+        sema_init(&full, 1);
+        producer_thread = kthread_run(kthread_producer, NULL, "producer");
+        // if there is a producer, must check if there is at least one consumer
+        if (cons == 1)
+        {
+            consumer_thread = kthread_run(kthread_consumer, NULL, "consumer");
+        }
+    }
+    // returns 0 if there isnt any producers
+    return 0;
 }
 
 static void exit_producer_consumer(void)
@@ -209,7 +209,7 @@ static void exit_producer_consumer(void)
     printk("Total number of items produced: " + processes);
     printk("Total number of items consumed: " + cprocesses);
 
-    printk("The total elapsed time of all processes for UID " + uuid + " is " + format_time(totelapsedc)); // replaced
+    printk("The total elapsed time of all processes for UID %d is %s", uuid, format_time(totelapsedc)); // replaced
 
     // printk("The total elapsed time of all processes for UID "+uuid+" is ");
     // printk(format_time(totelapsedc));
