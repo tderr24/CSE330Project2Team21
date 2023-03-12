@@ -128,7 +128,12 @@ char *format_time(unsigned long lap)
     unsigned long sec = lap - 60 * min;
     unsigned long milisec = (lap - sec - min * 60) * 1000;
 
-    char *output = kmalloc(sizeof(char) * 9, GFP_KERNEL); // kmalloc is a contiguous memory allocation for small - medium size kernel level memory allocation & does not fragment kernel memory pool
+
+
+    //char *output = kmalloc(sizeof(char) * 9, GFP_KERNEL); // kmalloc is a contiguous memory allocation for small - medium size kernel level memory allocation & does not fragment kernel memory pool
+    static char output[9];//does same as above I think, but should circumvent the allocation problem
+
+
 
     if (min < 1)
     {
@@ -186,6 +191,10 @@ static int kthread_consumer(void *arg)
 
 static void exit_producer_consumer(void)
 {
+
+
+    //need to signal the semmaphores multiple times, maybe while loop and keep iterating to see if all the threads have should_stop == true?
+
     if (prod == 1)
     {
         kthread_stop(producer_thread);
@@ -206,10 +215,9 @@ static void exit_producer_consumer(void)
     // printk(format_time(totelapsedc));
     //  above is other way of printing, printk does newline, so it needs to be in same statement
 
-    // Still need to ---
     // deallocate buffer
-    // deallocate the stuff in the time function
-    //need to signal the semmaphores multiple times, maybe while loop and keep iterating to see if all the threads have should_stop == true?
+    vfree(buffer);
+    
 
     printk("CSE330 Project 2 Kernel Module Removed");
 }
